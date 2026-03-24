@@ -1,12 +1,13 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
+import React from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
 
-import { queryClientInstance } from '@/lib/query-client';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { pagesConfig } from '@/pages.config';
-import PageNotFound from '@/lib/PageNotFound';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { Toaster } from "@/components/ui/toaster";
+import { queryClientInstance } from "@/lib/query-client";
+import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import { pagesConfig } from "@/pages.config";
+import PageNotFound from "@/lib/PageNotFound";
+import UserNotRegisteredError from "@/components/UserNotRegisteredError";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 
@@ -30,18 +31,13 @@ function LayoutWrapper({ children, currentPageName }) {
   );
 }
 
-function buildRoutes() {
-  return Object.entries(Pages).map(([pageName, PageComponent]) => (
-    <Route
-      key={pageName}
-      path={`/${pageName}`}
-      element={
-        <LayoutWrapper currentPageName={pageName}>
-          <PageComponent />
-        </LayoutWrapper>
-      }
-    />
-  ));
+function getMainPageName() {
+  if (mainPage && Pages?.[mainPage]) {
+    return mainPage;
+  }
+
+  const pageNames = Object.keys(Pages || {});
+  return pageNames.length > 0 ? pageNames[0] : null;
 }
 
 function AppRoutes() {
@@ -50,17 +46,19 @@ function AppRoutes() {
     authError,
     canAccessApp,
     shouldShowLoginRedirect,
-    navigateToLogin
+    navigateToLogin,
   } = useAuth();
 
-  const fallbackMainPage = mainPage && Pages[mainPage] ? mainPage : Object.keys(Pages)[0];
-  const MainPageComponent = fallbackMainPage ? Pages[fallbackMainPage] : null;
+  const resolvedMainPageName = getMainPageName();
+  const MainPageComponent = resolvedMainPageName
+    ? Pages[resolvedMainPageName]
+    : null;
 
   if (isBootstrapping) {
     return <FullScreenLoader />;
   }
 
-  if (authError?.type === 'user_not_registered') {
+  if (authError?.type === "user_not_registered") {
     return <UserNotRegisteredError />;
   }
 
@@ -79,7 +77,7 @@ function AppRoutes() {
         path="/"
         element={
           MainPageComponent ? (
-            <LayoutWrapper currentPageName={fallbackMainPage}>
+            <LayoutWrapper currentPageName={resolvedMainPageName}>
               <MainPageComponent />
             </LayoutWrapper>
           ) : (
@@ -87,7 +85,19 @@ function AppRoutes() {
           )
         }
       />
-      {buildRoutes()}
+
+      {Object.entries(Pages || {}).map(([pageName, PageComponent]) => (
+        <Route
+          key={pageName}
+          path={`/${pageName}`}
+          element={
+            <LayoutWrapper currentPageName={pageName}>
+              <PageComponent />
+            </LayoutWrapper>
+          }
+        />
+      ))}
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
