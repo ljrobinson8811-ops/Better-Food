@@ -2,12 +2,12 @@ import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 
-import { Toaster } from "@/components/ui/toaster";
-import { queryClientInstance } from "@/lib/query-client";
-import { AuthProvider, useAuth } from "@/lib/AuthContext";
-import { pagesConfig } from "@/pages.config";
-import PageNotFound from "@/lib/PageNotFound";
-import UserNotRegisteredError from "@/components/UserNotRegisteredError";
+import { Toaster } from "./components/ui/toaster";
+import { queryClientInstance } from "./lib/query-client";
+import { AuthProvider, useAuth } from "./lib/AuthContext";
+import { pagesConfig } from "./pages.config";
+import PageNotFound from "./lib/PageNotFound";
+import UserNotRegisteredError from "./components/UserNotRegisteredError";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 
