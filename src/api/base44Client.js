@@ -1,5 +1,5 @@
 import { createClient } from "@base44/sdk";
-import { appParams } from "@/lib/app-params";
+import { appParams } from "../lib/app-params.js";
 
 const {
   appId,
@@ -10,7 +10,7 @@ const {
 } = appParams;
 
 function normalizeUrl(url) {
-  return String(url || "").replace(/\/+$/, "");
+  return String(url || "").trim().replace(/\/+$/, "");
 }
 
 function resolveServerUrl() {
@@ -26,9 +26,9 @@ function resolveServerUrl() {
 }
 
 export const base44Config = Object.freeze({
-  appId: appId || "",
-  token: token || "",
-  functionsVersion: functionsVersion || "",
+  appId: String(appId || "").trim(),
+  token: String(token || "").trim(),
+  functionsVersion: String(functionsVersion || "").trim(),
   appBaseUrl: normalizeUrl(appBaseUrl),
   apiBaseUrl: normalizeUrl(apiBaseUrl),
   serverUrl: resolveServerUrl(),
@@ -78,7 +78,11 @@ export async function safeRedirectToLogin(redirectUrl = "") {
   }
 
   try {
-    await base44.auth.redirectToLogin(redirectUrl || window.location.href);
+    const fallbackUrl =
+      redirectUrl ||
+      (typeof window !== "undefined" ? window.location.href : "");
+
+    await base44.auth.redirectToLogin(fallbackUrl);
     return true;
   } catch {
     return false;
@@ -91,7 +95,11 @@ export async function safeLogout(redirectUrl = "") {
   }
 
   try {
-    await base44.auth.logout(redirectUrl || window.location.href);
+    const fallbackUrl =
+      redirectUrl ||
+      (typeof window !== "undefined" ? window.location.href : "");
+
+    await base44.auth.logout(fallbackUrl);
     return true;
   } catch {
     return false;
