@@ -79,12 +79,12 @@ export default function Layout({ children, currentPageName }) {
 
   const handleTabPress = (item) => {
     if (item.page === activeTab) {
+      // Tapping active tab navigates to the root of that tab's stack
       navigate(createPageUrl(item.page));
       return;
     }
-
-    const savedUrl = tabHistoryRef.current[item.page];
-    navigate(savedUrl || createPageUrl(item.page));
+    const savedUrl = tabHistory.current[item.page];
+    navigate(savedUrl ?? createPageUrl(item.page));
   };
 
   return (

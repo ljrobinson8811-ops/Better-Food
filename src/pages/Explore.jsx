@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
-import { Dedup } from "@/infra/deduplication";
-import { Validators } from "@/infra/validation";
+import { Dedup } from "@/components/infra/deduplication";
+import { Validators } from "@/components/infra/validation";
 import { Analytics } from "@/components/infra/analytics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
