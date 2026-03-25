@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import AdminGuard from "../components/admin/AdminGuard.jsx";
-import { base44 } from "../api/base44Client.js";
+import AdminGuard from "@/components/admin/AdminGuard";
+import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl } from "@/utils";
 import { ArrowLeft, CheckCircle, XCircle, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -11,25 +11,21 @@ export default function AdminModeration() {
   const [filter, setFilter] = useState("pending");
   const queryClient = useQueryClient();
 
-  const { data: queue = [] } = useQuery({
+  const { data: queue } = useQuery({
     queryKey: ["modQueue"],
     queryFn: () => base44.entities.ContentModerationQueue.list("-created_date", 100),
     initialData: [],
   });
 
-  const filtered = filter === "all" ? queue : queue.filter((q) => q.status === filter);
+  const filtered = filter === "all" ? queue : queue.filter(q => q.status === filter);
 
   const handleApprove = async (item) => {
     await base44.entities.ContentModerationQueue.update(item.id, { status: "approved", reviewed_by: "admin" });
     const existing = await base44.entities.CommunityPhoto.filter({ photo_url: item.photo_url });
     if (existing.length === 0) {
       await base44.entities.CommunityPhoto.create({
-        photo_url: item.photo_url,
-        menu_item_id: item.menu_item_id,
-        recipe_id: item.recipe_id,
-        status: "approved",
-        likes_count: 0,
-        liked_by: [],
+        photo_url: item.photo_url, menu_item_id: item.menu_item_id,
+        recipe_id: item.recipe_id, status: "approved", likes_count: 0, liked_by: [],
       });
     }
     queryClient.invalidateQueries({ queryKey: ["modQueue"] });
@@ -41,10 +37,10 @@ export default function AdminModeration() {
   };
 
   const counts = {
-    pending: queue.filter((q) => q.status === "pending").length,
-    flagged: queue.filter((q) => q.status === "flagged").length,
-    approved: queue.filter((q) => q.status === "approved").length,
-    rejected: queue.filter((q) => q.status === "rejected").length,
+    pending: queue.filter(q => q.status === "pending").length,
+    flagged: queue.filter(q => q.status === "flagged").length,
+    approved: queue.filter(q => q.status === "approved").length,
+    rejected: queue.filter(q => q.status === "rejected").length,
   };
 
   return (
@@ -69,12 +65,9 @@ export default function AdminModeration() {
           </div>
 
           <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
-            {["pending", "flagged", "approved", "rejected", "all"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap flex-shrink-0 ${filter === f ? "bg-primary text-white" : "bg-secondary text-muted-foreground"}`}
-              >
+            {["pending", "flagged", "approved", "rejected", "all"].map(f => (
+              <button key={f} onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize whitespace-nowrap flex-shrink-0 ${filter === f ? "bg-primary text-white" : "bg-secondary text-muted-foreground"}`}>
                 {f} {counts[f] !== undefined ? `(${counts[f]})` : ""}
               </button>
             ))}
@@ -88,9 +81,10 @@ export default function AdminModeration() {
           ) : (
             <div className="space-y-3">
               {filtered.map((item, i) => (
-                <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className="bg-card border border-border rounded-2xl overflow-hidden">
+                <motion.div key={item.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                  className="bg-card border border-border rounded-2xl overflow-hidden">
                   <div className="h-40 bg-secondary flex items-center justify-center">
-                    <img src={item.photo_url} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                    <img src={item.photo_url} alt="" className="w-full h-full object-cover" onError={e => e.target.style.display = "none"} />
                   </div>
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-2">

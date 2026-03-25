@@ -1,18 +1,9 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs) {
-  return twMerge(clsx(...inputs));
-}
+  return twMerge(clsx(inputs))
+} 
 
-export function isRunningInIframe() {
-  if (typeof window === 'undefined') {
-    return false;
-  }
 
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-}
+export const isIframe = window.self !== window.top;

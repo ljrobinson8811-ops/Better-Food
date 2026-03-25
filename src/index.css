@@ -80,13 +80,6 @@
     -webkit-user-select: none;
     pointer-events: none;
   }
-  /* Allow text selection for recipe content, ingredient names, and captions */
-  [class*="ingredient"], [class*="instruction"], [class*="step"], [class*="caption"],
-  p:has(> span), li, td, th,
-  .recipe-text, .ingredient-name, .community-caption {
-    user-select: text;
-    -webkit-user-select: text;
-  }
 }
 
 /* Premium scrollbar */

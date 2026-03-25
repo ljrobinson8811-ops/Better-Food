@@ -1,22 +1,22 @@
 import React from "react";
-import AdminGuard from "../components/admin/AdminGuard.jsx";
-import { base44 } from "../api/base44Client.js";
+import AdminGuard from "@/components/admin/AdminGuard";
+import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "../utils";
+import { createPageUrl } from "@/utils";
 import { ArrowLeft, Crown, Lock, Unlock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { motion } from "framer-motion";
 
 export default function AdminPremium() {
-  const { data: usage = [] } = useQuery({
+  const { data: usage } = useQuery({
     queryKey: ["premiumAll"],
     queryFn: () => base44.entities.PremiumFeatureUsage.list("-created_date", 500),
     initialData: [],
   });
 
-  const blocked = usage.filter((u) => u.action === "blocked");
-  const unlocked = usage.filter((u) => u.action === "unlocked");
+  const blocked = usage.filter(u => u.action === "blocked");
+  const unlocked = usage.filter(u => u.action === "unlocked");
 
   const featureBlockedCounts = blocked.reduce((acc, u) => {
     acc[u.feature_name] = (acc[u.feature_name] || 0) + 1;
@@ -27,7 +27,7 @@ export default function AdminPremium() {
     .map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
 
   const conversionRate = usage.length > 0
-    ? ((usage.filter((u) => u.converted_to_premium).length / usage.length) * 100).toFixed(1)
+    ? ((usage.filter(u => u.converted_to_premium).length / usage.length) * 100).toFixed(1)
     : 0;
 
   return (
@@ -81,7 +81,7 @@ export default function AdminPremium() {
               <p className="text-sm text-muted-foreground">No data yet</p>
             ) : (
               <div className="space-y-2">
-                {usage.slice(0, 10).map((u) => (
+                {usage.slice(0, 10).map(u => (
                   <div key={u.id} className="flex items-center justify-between">
                     <span className="text-xs font-medium text-foreground capitalize">{u.feature_name?.replace(/_/g, " ")}</span>
                     <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${u.action === "blocked" ? "bg-primary/15 text-primary" : "bg-chart-3/15 text-chart-3"}`}>

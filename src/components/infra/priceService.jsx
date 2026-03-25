@@ -1,64 +1,48 @@
-import { Cache, TTL } from "@/infra/cache";
-import { logError, ErrorTypes } from "@/infra/errorLogger";
+/**
+ * Price Estimation Service
+ * - Detects user location (geolocation API)
+ * - Falls back to national US averages
+ * - Caches results for 24h per item+region
+ */
 
+import { base44 } from "@/api/base44Client";
+import { Cache, TTL } from "@/components/infra/cache";
+
+// National average ingredient cost multipliers by region
 const REGIONAL_MULTIPLIERS = {
-  CA: 1.18,
-  NY: 1.22,
-  TX: 0.95,
-  FL: 1.02,
-  WA: 1.14,
-  IL: 1.06,
-  MA: 1.19,
-  default: 1.0,
+  CA: 1.18, NY: 1.22, TX: 0.95, FL: 1.02,
+  WA: 1.14, IL: 1.06, MA: 1.19, default: 1.0,
 };
 
+// National average grocery prices (USD per unit) for common ingredients
 const NATIONAL_AVERAGES = {
-  "ground beef": 6.5,
-  "chicken breast": 5.2,
-  "bun": 0.4,
-  "lettuce": 2.0,
-  "tomato": 0.8,
-  "cheddar cheese": 0.45,
-  "mayo": 0.12,
-  "ketchup": 0.08,
-  "mustard": 0.07,
-  "onion": 0.6,
-  "egg": 0.25,
-  "milk": 0.3,
-  "butter": 0.2,
-  "olive oil": 0.25,
-  "flour": 0.15,
-  default: 1.0,
+  "ground beef (lb)":        6.50,
+  "chicken breast (lb)":     5.20,
+  "bun (each)":              0.40,
+  "lettuce (head)":          2.00,
+  "tomato (each)":           0.80,
+  "cheddar cheese (oz)":     0.45,
+  "mayo (oz)":               0.12,
+  "ketchup (oz)":            0.08,
+  "mustard (oz)":            0.07,
+  "onion (each)":            0.60,
+  "egg (each)":              0.25,
+  "milk (cup)":              0.30,
+  "butter (tbsp)":           0.20,
+  "olive oil (tbsp)":        0.25,
+  "flour (cup)":             0.15,
+  "default":                 1.00,
 };
-
-function inferIngredientBasePrice(name = "") {
-  const normalizedName = name.toLowerCase();
-
-  const match = Object.keys(NATIONAL_AVERAGES).find((key) => {
-    if (key === "default") {
-      return false;
-    }
-    return normalizedName.includes(key);
-  });
-
-  return NATIONAL_AVERAGES[match] ?? NATIONAL_AVERAGES.default;
-}
 
 async function detectRegion() {
-  const cachedRegion = Cache.get("user_region");
-  if (cachedRegion) {
-    return cachedRegion;
-  }
-
+  const cached = Cache.get("user_region");
+  if (cached) return cached;
   try {
-    const response = await fetch("https://ipapi.co/json/");
-    if (!response.ok) {
-      throw new Error(`Region lookup failed with ${response.status}`);
-    }
-
-    const data = await response.json();
-    const region = data?.region_code || "default";
-    Cache.set("user_region", region, TTL.PRICE);
+    // Use IP-based detection via a free endpoint (no API key needed)
+    const res  = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    const region = data.region_code ?? "default";
+    Cache.set("user_region", region, TTL.NUTRITION); // cache for 24h
     return region;
   } catch {
     return "default";
@@ -66,50 +50,36 @@ async function detectRegion() {
 }
 
 export const PriceService = {
+  /**
+   * Estimate the homemade cost for a recipe's ingredients
+   * @param {Array}  ingredients - array of {better: string, quantity: string}
+   * @param {string} menuItemId
+   */
   async estimate(ingredients = [], menuItemId = "") {
-    const region = await detectRegion();
-    const cacheKey = Cache.keys.price(menuItemId || "draft", region);
-    const cached = Cache.get(cacheKey);
-    if (cached) {
-      return cached;
+    const cacheKey = Cache.keys.price(menuItemId);
+    const cached   = Cache.get(cacheKey);
+    if (cached) return cached;
+
+    const region     = await detectRegion();
+    const multiplier = REGIONAL_MULTIPLIERS[region] ?? REGIONAL_MULTIPLIERS.default;
+
+    let total = 0;
+    for (const ing of ingredients) {
+      const name  = (ing.better || ing.original || "").toLowerCase();
+      const match = Object.keys(NATIONAL_AVERAGES).find(k => name.includes(k.split(" ")[0]));
+      const price = (NATIONAL_AVERAGES[match] ?? NATIONAL_AVERAGES.default) * multiplier;
+      total += price;
     }
 
-    try {
-      const multiplier =
-        REGIONAL_MULTIPLIERS[region] ?? REGIONAL_MULTIPLIERS.default;
+    const result = {
+      estimated_cost: parseFloat(total.toFixed(2)),
+      region,
+      multiplier,
+      currency: "USD",
+      source: "national_averages",
+    };
 
-      let total = 0;
-
-      for (const ingredient of ingredients) {
-        const ingredientName = ingredient?.better || ingredient?.original || "";
-        total += inferIngredientBasePrice(ingredientName) * multiplier;
-      }
-
-      const result = {
-        estimated_cost: Number(total.toFixed(2)),
-        region,
-        multiplier,
-        currency: "USD",
-        source: "national_averages",
-      };
-
-      Cache.set(cacheKey, result, TTL.PRICE);
-      return result;
-    } catch (error) {
-      await logError(
-        ErrorTypes.API_ERROR,
-        error?.message || "Price estimation failed",
-        { menuItemId, ingredientCount: ingredients.length, region },
-        "medium"
-      );
-
-      return {
-        estimated_cost: 0,
-        region,
-        multiplier: REGIONAL_MULTIPLIERS[region] ?? REGIONAL_MULTIPLIERS.default,
-        currency: "USD",
-        source: "fallback",
-      };
-    }
+    Cache.set(cacheKey, result, TTL.PRICE);
+    return result;
   },
 };

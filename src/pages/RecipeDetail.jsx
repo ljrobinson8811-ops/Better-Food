@@ -1,39 +1,26 @@
-import React, { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
-  Heart,
-  Sparkles,
-  Loader2,
-  ChefHat,
-  Clock,
-  Users,
-  TrendingDown,
-  Zap,
-  DollarSign,
-  ShieldCheck,
-  Share2,
-  Lock,
-  Crown,
+  ArrowLeft, Heart, Sparkles, Loader2, ChefHat, Clock, Users,
+  TrendingDown, Zap, DollarSign, ShieldCheck, Share2, Lock, Crown
 } from "lucide-react";
+import ShareCard from "@/components/shared/ShareCard";
+import { Analytics } from "@/components/infra/analytics";
+import { generateAndStoreRecipe } from "@/components/infra/recipeWorker";
+import { Quota } from "@/components/infra/quota";
+import { RateLimit } from "@/components/infra/rateLimit";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-
-import { createPageUrl } from "../utils";
-import { base44 } from "../api/base44Client.js";
-import { Analytics } from "../components/infra/analytics.jsx";
-import { Quota } from "../components/infra/quota.jsx";
-import { RateLimit } from "../components/infra/rateLimit.jsx";
-import { generateAndStoreRecipe } from "../components/infra/recipeWorker.jsx";
-import ShareCard from "../components/shared/ShareCard.jsx";
-import NutritionComparison from "../components/recipe/NutritionComparison.jsx";
-import IngredientTable from "../components/recipe/IngredientTable.jsx";
-import IngredientBuying from "../components/recipe/IngredientBuying.jsx";
-import PriceComparison from "../components/recipe/PriceComparison.jsx";
-import CookingSteps from "../components/recipe/CookingSteps.jsx";
-import DifficultyBadge from "../components/shared/DifficultyBadge.jsx";
-import RecipeTimeBar from "../components/recipe/RecipeTimeBar.jsx";
-import { Button } from "../components/ui/button.jsx";
+import NutritionComparison from "@/components/recipe/NutritionComparison";
+import IngredientTable from "@/components/recipe/IngredientTable";
+import IngredientBuying from "@/components/recipe/IngredientBuying";
+import PriceComparison from "@/components/recipe/PriceComparison";
+import CookingSteps from "@/components/recipe/CookingSteps";
+import DifficultyBadge from "@/components/shared/DifficultyBadge";
+import RecipeTimeBar from "@/components/recipe/RecipeTimeBar";
 
 function AdvantageCard({ icon: Icon, title, value, sub, color, bgColor, delay = 0 }) {
   return (
@@ -41,10 +28,10 @@ function AdvantageCard({ icon: Icon, title, value, sub, color, bgColor, delay = 
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className={`relative flex flex-col gap-1 overflow-hidden rounded-2xl border p-4 ${bgColor}`}
+      className={`rounded-2xl border p-4 flex flex-col gap-1 relative overflow-hidden ${bgColor}`}
     >
-      <div className="absolute right-0 top-0 h-16 w-16 translate-x-6 -translate-y-6 rounded-full bg-current opacity-10" />
-      <Icon className={`mb-1 h-4 w-4 ${color}`} />
+      <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-10 bg-current -translate-y-6 translate-x-6" />
+      <Icon className={`w-4 h-4 ${color} mb-1`} />
       <p className={`text-xl font-black ${color}`}>{value}</p>
       <p className="text-[11px] font-bold text-foreground">{title}</p>
       <p className="text-[10px] text-muted-foreground">{sub}</p>
@@ -56,269 +43,169 @@ function PremiumLockCard({ feature }) {
   const messages = {
     swaps: {
       title: "Unlock Healthier Swaps",
-      desc: "See premium ingredient replacements for the best health upgrades.",
+      desc: "Discover which ingredients to replace for maximum health benefits",
       emoji: "🥗",
     },
     cooking: {
       title: "Unlock Cooking Mode",
-      desc: "Use guided step by step cooking with timers and progress tracking.",
+      desc: "Step-by-step guided cooking with built-in timers and progress tracking",
       emoji: "👨‍🍳",
     },
   };
-
-  const message = messages[feature] || messages.swaps;
-
+  const msg = messages[feature] || messages.swaps;
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-primary/5 to-transparent p-5 text-center"
+      className="bg-gradient-to-br from-primary/8 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-5 text-center"
     >
-      <div className="mb-3 text-3xl">{message.emoji}</div>
-      <h3 className="text-sm font-black text-foreground">{message.title}</h3>
-      <p className="mb-4 mt-1 text-xs leading-relaxed text-muted-foreground">
-        {message.desc}
-      </p>
+      <div className="text-3xl mb-3">{msg.emoji}</div>
+      <h3 className="text-sm font-black text-foreground">{msg.title}</h3>
+      <p className="text-xs text-muted-foreground mt-1 mb-4 leading-relaxed">{msg.desc}</p>
       <Link
         to={createPageUrl("Profile")}
-        className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white"
+        className="inline-flex items-center gap-2 bg-primary text-white rounded-xl px-5 py-2.5 text-sm font-bold"
       >
-        <Crown className="h-4 w-4" />
+        <Crown className="w-4 h-4" />
         Start 7-Day Free Trial
       </Link>
     </motion.div>
   );
 }
 
-function asArray(value) {
-  return Array.isArray(value) ? value : [];
-}
-
 export default function RecipeDetail() {
-  const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
-
-  const menuItemId = searchParams.get("menuItemId") || "";
-  const restaurantId = searchParams.get("restaurantId") || "";
-
+  const params = new URLSearchParams(window.location.search);
+  const menuItemId = params.get("menuItemId");
+  const restaurantId = params.get("restaurantId");
+  const [generating, setGenerating] = useState(false);
+  const [cookingMode, setCookingMode] = useState(null);
   const [servings, setServings] = useState(1);
   const [showShare, setShowShare] = useState(false);
   const [ingredientView, setIngredientView] = useState("original");
-  const [cookingMode, setCookingMode] = useState(null);
+  const queryClient = useQueryClient();
 
+  // Determine user access level
   const { data: accessData } = useQuery({
     queryKey: ["accessLevel"],
     queryFn: async () => {
       try {
-        const user = await base44.auth.me();
-        if (!user) return { level: "guest", user: null };
-
-        const statsList = await base44.entities.UserStats.filter({
-          created_by: user.email,
-        });
-        const stats = statsList[0];
+        const me = await base44.auth.me();
+        if (!me) return { level: "guest", user: null };
+        const statsItems = await base44.entities.UserStats.filter({ created_by: me.email });
+        const s = statsItems[0];
+        if (!s) return { level: "basic", user: me };
         const now = new Date();
-        const expiry = stats?.premium_expiry ? new Date(stats.premium_expiry) : null;
-
-        if (stats?.is_premium && expiry && expiry > now) {
-          return { level: "premium", user };
-        }
-
-        if (expiry && expiry > now) {
-          return { level: "trial", user };
-        }
-
-        return { level: "basic", user };
+        const expiry = s.premium_expiry ? new Date(s.premium_expiry) : null;
+        if (s.is_premium && expiry && expiry > now) return { level: "premium", user: me };
+        if (expiry && expiry > now) return { level: "trial", user: me };
+        return { level: "basic", user: me };
       } catch {
         return { level: "guest", user: null };
       }
     },
     initialData: { level: "basic", user: null },
   });
-
   const accessLevel = accessData?.level || "basic";
   const isPremium = accessLevel === "premium" || accessLevel === "trial";
 
-  const { data: menuItem = null } = useQuery({
+  const { data: menuItem } = useQuery({
     queryKey: ["menuItem", menuItemId],
-    enabled: Boolean(menuItemId),
-    queryFn: async () => {
-      const result = await base44.entities.MenuItem.filter({ id: menuItemId });
-      return asArray(result)[0] || null;
-    },
-    initialData: null,
+    queryFn: () => base44.entities.MenuItem.filter({ id: menuItemId }),
+    select: d => d[0],
+    enabled: !!menuItemId,
   });
 
-  const { data: restaurant = null } = useQuery({
+  const { data: restaurant } = useQuery({
     queryKey: ["restaurant", restaurantId],
-    enabled: Boolean(restaurantId),
-    queryFn: async () => {
-      const result = await base44.entities.Restaurant.filter({ id: restaurantId });
-      return asArray(result)[0] || null;
-    },
-    initialData: null,
+    queryFn: () => base44.entities.Restaurant.filter({ id: restaurantId }),
+    select: d => d[0],
+    enabled: !!restaurantId,
   });
 
-  const {
-    data: recipe = null,
-    isLoading: recipeLoading,
-    refetch: refetchRecipe,
-  } = useQuery({
+  const { data: recipe, refetch: refetchRecipe } = useQuery({
     queryKey: ["recipe", menuItemId],
-    enabled: Boolean(menuItemId),
+    queryFn: () => base44.entities.Recipe.filter({ menu_item_id: menuItemId }),
+    select: d => d[0],
+    enabled: !!menuItemId,
+  });
+
+  const { data: isFavorited } = useQuery({
+    queryKey: ["fav", menuItemId],
     queryFn: async () => {
-      const result = await base44.entities.Recipe.filter({
-        menu_item_id: menuItemId,
-      });
-      return asArray(result)[0] || null;
+      const me = await base44.auth.me();
+      const favs = await base44.entities.UserFavorite.filter({ item_id: menuItemId, created_by: me.email });
+      return favs.length > 0 ? favs[0] : null;
     },
-    initialData: null,
+    enabled: !!menuItemId && accessLevel !== "guest",
   });
 
-  const { data: favoriteRecord = null } = useQuery({
-    queryKey: ["favoriteRecipe", menuItemId],
-    enabled: Boolean(menuItemId) && accessLevel !== "guest",
-    queryFn: async () => {
-      const user = await base44.auth.me();
-      const result = await base44.entities.UserFavorite.filter({
-        item_id: menuItemId,
-        created_by: user.email,
-      });
-      return asArray(result)[0] || null;
-    },
-    initialData: null,
-  });
-
-  const toggleFavoriteMutation = useMutation({
+  const toggleFav = useMutation({
     mutationFn: async () => {
-      if (favoriteRecord?.id) {
-        await base44.entities.UserFavorite.delete(favoriteRecord.id);
-        return null;
+      if (isFavorited) {
+        await base44.entities.UserFavorite.delete(isFavorited.id);
+      } else {
+        await base44.entities.UserFavorite.create({
+          item_type: "recipe", item_id: menuItemId,
+          item_name: menuItem?.name, restaurant_name: restaurant?.name,
+        });
       }
-
-      return base44.entities.UserFavorite.create({
-        item_type: "recipe",
-        item_id: menuItemId,
-        item_name: menuItem?.name || "",
-        restaurant_id: restaurant?.id || "",
-        restaurant_name: restaurant?.name || "",
-      });
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["favoriteRecipe", menuItemId] });
-      await queryClient.invalidateQueries({ queryKey: ["favorites"] });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["fav", menuItemId] });
+      const prev = queryClient.getQueryData(["fav", menuItemId]);
+      // Optimistically toggle: if favorited set to null, else set a placeholder truthy value
+      queryClient.setQueryData(["fav", menuItemId], prev ? null : { id: "optimistic" });
+      return { prev };
     },
+    onError: (_err, _vars, context) => {
+      if (context?.prev !== undefined) queryClient.setQueryData(["fav", menuItemId], context.prev);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["fav", menuItemId] }),
   });
 
-  const generateRecipeMutation = useMutation({
-    mutationFn: async () => {
-      const currentUser = await base44.auth.me().catch(() => null);
+  const handleGenerateRecipe = async () => {
+    const me = await base44.auth.me().catch(() => null);
+    const rl = RateLimit.check(`recipe_gen_${me?.email ?? "anon"}`, me ? "authenticated" : "anonymous");
+    if (!rl.allowed) { alert(rl.error.message); return; }
 
-      const rateLimitResult = RateLimit.check(
-        `recipe_gen_${currentUser?.email || "anonymous"}`,
-        currentUser ? "authenticated" : "anonymous"
-      );
-
-      if (!rateLimitResult.allowed) {
-        throw new Error(rateLimitResult.error?.message || "Too many requests.");
+    if (me) {
+      const statsItems = await base44.entities.UserStats.filter({ created_by: me.email }).catch(() => []);
+      const isP = statsItems[0]?.is_premium ?? false;
+      const quota = await Quota.checkAndConsume(Quota.ACTIONS.RECIPE_GENERATION, me.email, isP);
+      if (!quota.allowed) {
+        alert(`Daily limit reached (${quota.limit} recipes/day). ${isP ? "Contact support." : "Upgrade to Premium for more."}`);
+        return;
       }
+    }
 
-      if (currentUser?.email) {
-        const userStatsList = await base44.entities.UserStats.filter({
-          created_by: currentUser.email,
-        }).catch(() => []);
-
-        const premiumActive = Boolean(userStatsList[0]?.is_premium);
-
-        const quotaResult = await Quota.checkAndConsume(
-          Quota.ACTIONS.RECIPE_GENERATION,
-          currentUser.email,
-          premiumActive
-        );
-
-        if (!quotaResult.allowed) {
-          throw new Error(
-            `Daily limit reached (${quotaResult.limit} recipes/day).`
-          );
-        }
-      }
-
-      const result = await generateAndStoreRecipe(menuItem, restaurant);
-
-      if (!result?.success && !result?.recipe) {
-        throw new Error(result?.error || "Recipe generation failed.");
-      }
-
-      Analytics.recipeGenerated(menuItemId);
-      return result;
-    },
-    onSuccess: async () => {
-      await refetchRecipe();
-      await queryClient.invalidateQueries({ queryKey: ["recipe", menuItemId] });
-    },
-  });
-
-  const handleIngredientToggle = async (index) => {
-    if (!recipe?.id || !Array.isArray(recipe.ingredients)) return;
-
-    const updatedIngredients = [...recipe.ingredients];
-    updatedIngredients[index] = {
-      ...updatedIngredients[index],
-      accepted: !updatedIngredients[index]?.accepted,
-    };
-
-    await base44.entities.Recipe.update(recipe.id, {
-      ingredients: updatedIngredients,
-    });
-
+    setGenerating(true);
+    await generateAndStoreRecipe(menuItem, restaurant);
+    Analytics.recipeGenerated(menuItemId);
     await refetchRecipe();
+    setGenerating(false);
   };
 
-  const totalTime =
-    Number(recipe?.prep_time_minutes || 0) + Number(recipe?.cook_time_minutes || 0);
+  const handleIngredientToggle = async (index) => {
+    if (!recipe) return;
+    const newIngredients = [...recipe.ingredients];
+    newIngredients[index] = { ...newIngredients[index], accepted: !newIngredients[index].accepted };
+    await base44.entities.Recipe.update(recipe.id, { ingredients: newIngredients });
+    refetchRecipe();
+  };
 
-  const calorieDifference =
-    Number(menuItem?.original_calories || 0) - Number(recipe?.better_calories || 0);
+  const calDiff = (menuItem?.original_calories || 0) - (recipe?.better_calories || 0);
+  const protDiff = (recipe?.better_protein || 0) - (menuItem?.original_protein || 0);
+  const totalTime = (recipe?.prep_time_minutes || 0) + (recipe?.cook_time_minutes || 0);
 
-  const proteinDifference =
-    Number(recipe?.better_protein || 0) - Number(menuItem?.original_protein || 0);
-
-  const scaledIngredients = useMemo(() => {
-    return asArray(recipe?.ingredients).map((ingredient) => ({
-      ...ingredient,
-      quantity:
-        servings > 1
-          ? `${ingredient.quantity || ""} (×${servings})`
-          : ingredient.quantity,
-    }));
-  }, [recipe?.ingredients, servings]);
-
-  if (!menuItemId) {
-    return (
-      <div className="min-h-screen bg-background pb-8">
-        <div className="px-5 pt-16">
-          <Link
-            to={createPageUrl("Explore")}
-            className="inline-flex items-center gap-2 text-muted-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Explore</span>
-          </Link>
-
-          <div className="py-16 text-center">
-            <h1 className="text-xl font-black text-foreground">Missing menu item</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              This page needs a valid menu item before it can load.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const scaledIngredients = recipe?.ingredients?.map(ing => ({
+    ...ing,
+    quantity: servings > 1 ? `${ing.quantity} (×${servings})` : ing.quantity,
+  }));
 
   return (
     <div className="min-h-screen bg-background pb-40">
-      <div className="relative overflow-hidden bg-foreground">
+      {/* Dark hero header */}
+      <div className="bg-foreground relative overflow-hidden">
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{
@@ -327,271 +214,223 @@ export default function RecipeDetail() {
           }}
         />
 
-        <div className="relative px-5 pb-6 pt-14">
-          <div className="mb-5 flex items-center justify-between">
+        <div className="relative px-5 pt-14 pb-6">
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-5">
             <Link
               to={createPageUrl(`RestaurantDetail?id=${restaurantId}`)}
-              className="flex items-center gap-2 text-background/55"
+              className="flex items-center gap-2 text-background/55 hover:text-background/80 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                {restaurant?.name || "Back"}
-              </span>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm font-medium">{restaurant?.name || "Back"}</span>
             </Link>
-
             <div className="flex items-center gap-2">
-              {recipe ? (
+              {recipe && (
                 <button
                   onClick={() => setShowShare(true)}
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl border border-background/20 bg-background/10 text-background/60"
+                  className="w-10 h-10 rounded-2xl border bg-background/10 border-background/20 text-background/60 flex items-center justify-center transition-all"
                 >
-                  <Share2 className="h-4 w-4" />
+                  <Share2 className="w-4 h-4" />
                 </button>
-              ) : null}
-
-              {accessLevel !== "guest" ? (
+              )}
+              {accessLevel !== "guest" && (
                 <button
-                  onClick={() => toggleFavoriteMutation.mutate()}
-                  className={`flex h-10 w-10 items-center justify-center rounded-2xl border transition-all ${
-                    favoriteRecord
-                      ? "border-primary/50 bg-primary/30 text-primary"
-                      : "border-background/20 bg-background/10 text-background/60"
+                  onClick={() => toggleFav.mutate()}
+                  className={`w-10 h-10 rounded-2xl border flex items-center justify-center transition-all ${
+                    isFavorited
+                      ? "bg-primary/30 border-primary/50 text-primary"
+                      : "bg-background/10 border-background/20 text-background/60"
                   }`}
                 >
-                  <Heart
-                    className={`h-4 w-4 ${favoriteRecord ? "fill-primary text-primary" : ""}`}
-                  />
+                  <Heart className={`w-4 h-4 ${isFavorited ? "fill-primary text-primary" : ""}`} />
                 </button>
-              ) : null}
+              )}
             </div>
           </div>
 
+          {/* Title & meta */}
           <div className="mb-4">
-            <p className="text-[11px] font-black uppercase tracking-widest text-background/40">
-              Better Version
-            </p>
-            <h1 className="mt-1 text-2xl font-black leading-tight text-background">
+            <p className="text-background/40 text-[11px] font-black uppercase tracking-widest">Better Version</p>
+            <h1 className="text-2xl font-black text-background leading-tight mt-1">
               {recipe?.title || menuItem?.name || "Recipe"}
             </h1>
-            <p className="mt-0.5 text-sm font-medium text-background/60">
-              {restaurant?.name}
-            </p>
-
-            {recipe ? (
-              <div className="mt-2 flex items-center gap-2">
-                <div className="flex items-center gap-1 rounded-full border border-background/15 bg-background/10 px-3 py-1">
-                  <Clock className="h-3 w-3 text-background/60" />
-                  <span className="text-[11px] font-bold text-background/60">
-                    {totalTime} min total
-                  </span>
+            <p className="text-background/60 text-sm mt-0.5 font-medium">{restaurant?.name}</p>
+            {recipe && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-1 bg-background/10 border border-background/15 rounded-full px-3 py-1">
+                  <Clock className="w-3 h-3 text-background/60" />
+                  <span className="text-[11px] text-background/60 font-bold">{totalTime} min total</span>
                 </div>
                 <DifficultyBadge level={recipe.difficulty_level || 1} />
               </div>
-            ) : null}
+            )}
           </div>
 
-          {recipe ? (
-            <div className="flex flex-wrap gap-2">
-              {calorieDifference > 0 ? (
-                <span className="rounded-full border border-primary/30 bg-primary/25 px-3 py-1.5 text-[11px] font-black text-primary">
-                  -{calorieDifference} cal
+          {/* Key win chips */}
+          {recipe && (
+            <div className="flex gap-2 flex-wrap">
+              {calDiff > 0 && (
+                <span className="text-[11px] font-black bg-primary/25 text-primary border border-primary/30 px-3 py-1.5 rounded-full">
+                  -{calDiff} cal
                 </span>
-              ) : null}
-
-              {proteinDifference > 0 ? (
-                <span className="rounded-full border border-chart-3/30 bg-chart-3/25 px-3 py-1.5 text-[11px] font-black text-chart-3">
-                  +{proteinDifference}g protein
+              )}
+              {protDiff > 0 && (
+                <span className="text-[11px] font-black bg-chart-3/25 text-chart-3 border border-chart-3/30 px-3 py-1.5 rounded-full">
+                  +{protDiff}g protein
                 </span>
-              ) : null}
-
-              {Number(recipe.savings_amount || 0) > 0 ? (
-                <span className="rounded-full border border-chart-4/30 bg-chart-4/25 px-3 py-1.5 text-[11px] font-black text-chart-4">
-                  save ${Number(recipe.savings_amount).toFixed(2)}
+              )}
+              {recipe.savings_amount > 0 && (
+                <span className="text-[11px] font-black bg-chart-4/25 text-chart-4 border border-chart-4/30 px-3 py-1.5 rounded-full">
+                  save ${recipe.savings_amount.toFixed(2)}
                 </span>
-              ) : null}
+              )}
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
-      <div className="mt-4 space-y-4 px-5">
-        {!recipe && !generateRecipeMutation.isPending && !recipeLoading ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center"
-          >
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
-              <Sparkles className="h-7 w-7 text-primary" />
-            </div>
-            <h3 className="text-lg font-black text-foreground">
-              Generate Better Recipe
-            </h3>
-            <p className="mb-5 mt-1 text-sm leading-relaxed text-muted-foreground">
-              AI will recreate this dish with healthier ingredients, more protein, and lower cost.
-            </p>
+      {/* Content */}
+      <div className="px-5 mt-4 space-y-4">
 
+        {/* Generate CTA */}
+        {!recipe && !generating && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-6 text-center"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-3">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-black text-foreground">Generate Better Recipe</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-5 leading-relaxed">
+              AI will recreate this dish with healthier ingredients, more protein, and lower cost
+            </p>
             <Button
-              onClick={() => generateRecipeMutation.mutate()}
-              className="glow-red h-12 w-full rounded-2xl bg-primary text-sm font-bold hover:bg-primary/90"
+              onClick={handleGenerateRecipe}
+              className="bg-primary hover:bg-primary/90 rounded-2xl px-8 h-12 text-sm font-bold glow-red w-full"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="w-4 h-4 mr-2" />
               Generate Better Recipe
             </Button>
           </motion.div>
-        ) : null}
+        )}
 
-        {generateRecipeMutation.isPending || recipeLoading ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
-            <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-bold text-foreground">
-              Crafting your better recipe...
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Analyzing nutrition and finding ingredient swaps
-            </p>
+        {generating && (
+          <div className="bg-card border border-border rounded-2xl p-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+            <p className="text-sm font-bold text-foreground">Crafting your better recipe...</p>
+            <p className="text-xs text-muted-foreground mt-1">Analyzing nutrition &amp; finding ingredient swaps</p>
           </div>
-        ) : null}
+        )}
 
-        {generateRecipeMutation.isError ? (
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-            <p className="text-sm font-bold text-foreground">Recipe generation failed</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {generateRecipeMutation.error?.message || "Please try again."}
-            </p>
-          </div>
-        ) : null}
-
-        {recipe ? (
+        {/* === RECIPE CONTENT (in required order) === */}
+        {recipe && (
           <>
+            {/* 1. Price comparison */}
             <PriceComparison
               originalPrice={menuItem?.original_price_estimate}
               homemadePrice={recipe.homemade_cost_estimate}
               savings={recipe.savings_amount}
             />
 
+            {/* 2. Advantage cards */}
             <div>
-              <p className="mb-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
-                Better Food Advantage
-              </p>
+              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">Better Food Advantage</p>
               <div className="grid grid-cols-2 gap-3">
                 <AdvantageCard
-                  icon={TrendingDown}
-                  title="Calories Saved"
-                  value={calorieDifference > 0 ? `-${calorieDifference}` : "0"}
+                  icon={TrendingDown} title="Calories Saved" delay={0.05}
+                  value={calDiff > 0 ? `-${calDiff}` : "0"}
                   sub="vs. restaurant version"
-                  color="text-primary"
-                  bgColor="bg-primary/5 border-primary/15"
-                  delay={0.05}
+                  color="text-primary" bgColor="bg-primary/5 border-primary/15"
                 />
                 <AdvantageCard
-                  icon={Zap}
-                  title="Protein Boost"
-                  value={
-                    proteinDifference > 0
-                      ? `+${proteinDifference}g`
-                      : `${recipe.better_protein || 0}g`
-                  }
+                  icon={Zap} title="Protein Boost" delay={0.08}
+                  value={protDiff > 0 ? `+${protDiff}g` : `${recipe.better_protein || 0}g`}
                   sub="per serving made"
-                  color="text-chart-3"
-                  bgColor="bg-chart-3/5 border-chart-3/15"
-                  delay={0.08}
+                  color="text-chart-3" bgColor="bg-chart-3/5 border-chart-3/15"
                 />
                 <AdvantageCard
-                  icon={DollarSign}
-                  title="Money Saved"
-                  value={`$${Number(recipe.savings_amount || 0).toFixed(2)}`}
+                  icon={DollarSign} title="Money Saved" delay={0.11}
+                  value={`$${(recipe.savings_amount || 0).toFixed(2)}`}
                   sub="cheaper than takeout"
-                  color="text-chart-4"
-                  bgColor="bg-chart-4/5 border-chart-4/15"
-                  delay={0.11}
+                  color="text-chart-4" bgColor="bg-chart-4/5 border-chart-4/15"
                 />
                 <AdvantageCard
-                  icon={ShieldCheck}
-                  title="Sodium Cut"
-                  value={`-${Math.max(
-                    0,
-                    Math.round(
-                      Number(menuItem?.original_sodium || 0) -
-                        Number(recipe?.better_sodium || 0)
-                    )
-                  )}mg`}
+                  icon={ShieldCheck} title="Sodium Cut" delay={0.14}
+                  value={`-${Math.max(0, Math.round((menuItem?.original_sodium || 0) - (recipe?.better_sodium || 0)))}mg`}
                   sub="less sodium intake"
-                  color="text-chart-2"
-                  bgColor="bg-chart-2/5 border-chart-2/15"
-                  delay={0.14}
+                  color="text-chart-2" bgColor="bg-chart-2/5 border-chart-2/15"
                 />
               </div>
             </div>
 
-            <RecipeTimeBar
-              prepTime={recipe.prep_time_minutes}
-              cookTime={recipe.cook_time_minutes}
-            />
+            {/* 3. Time bar */}
+            <RecipeTimeBar prepTime={recipe.prep_time_minutes} cookTime={recipe.cook_time_minutes} />
 
+            {/* 4. Nutrition comparison */}
             <NutritionComparison menuItem={menuItem} recipe={recipe} />
 
-            {isPremium ? (
-              <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3">
+            {/* 5. Servings scaler (premium only) */}
+            {isPremium && (
+              <div className="flex items-center justify-between bg-card rounded-2xl border border-border px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-bold text-foreground">
-                    Servings
-                  </span>
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-bold text-foreground">Servings</span>
                 </div>
-
                 <div className="flex items-center gap-4">
                   <button
-                    onClick={() => setServings((current) => Math.max(1, current - 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-lg font-bold text-foreground"
+                    onClick={() => setServings(Math.max(1, servings - 1))}
+                    className="w-9 h-9 rounded-xl bg-secondary text-foreground flex items-center justify-center text-lg font-bold"
                   >
                     −
                   </button>
-                  <span className="w-6 text-center text-xl font-black text-foreground">
-                    {servings}
-                  </span>
+                  <span className="text-xl font-black w-6 text-center text-foreground">{servings}</span>
                   <button
-                    onClick={() => setServings((current) => current + 1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-lg font-bold text-white"
+                    onClick={() => setServings(servings + 1)}
+                    className="w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center text-lg font-bold"
                   >
                     +
                   </button>
                 </div>
               </div>
-            ) : null}
+            )}
 
+            {/* 6 & 7. INGREDIENT SECTION with toggle */}
             <div>
-              <p className="mb-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
-                Ingredients
-              </p>
+              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">Ingredients</p>
 
-              <div className="mb-3 flex gap-1 rounded-xl bg-secondary p-1">
+              {/* Toggle: Original | Healthier Swaps */}
+              <div className="flex bg-secondary rounded-xl p-1 gap-1 mb-3">
                 <button
                   onClick={() => setIngredientView("original")}
-                  className={`flex-1 rounded-lg py-2.5 text-xs font-bold transition-all ${
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
                     ingredientView === "original"
-                      ? "border border-border bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground"
+                      ? "bg-card text-foreground shadow-sm border border-border"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Original Ingredients
                 </button>
-
                 <button
-                  onClick={() => setIngredientView("swaps")}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold transition-all ${
+                  onClick={() => {
+                    if (isPremium) setIngredientView("swaps");
+                    else setIngredientView("swaps"); // still set so the lock card shows
+                  }}
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     ingredientView === "swaps" && isPremium
                       ? "bg-primary text-white shadow-sm"
                       : ingredientView === "swaps" && !isPremium
-                        ? "border border-border bg-card text-muted-foreground"
-                        : "text-muted-foreground"
+                        ? "bg-card text-muted-foreground border border-border"
+                        : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {!isPremium ? <Lock className="h-3 w-3" /> : null}
+                  {!isPremium && <Lock className="w-3 h-3" />}
                   Healthier Swaps
                 </button>
               </div>
 
+              {/* Ingredient content */}
               {ingredientView === "original" ? (
                 <IngredientTable
                   ingredients={scaledIngredients}
@@ -611,69 +450,52 @@ export default function RecipeDetail() {
               )}
             </div>
 
+            {/* 8. BUYING SECTION */}
             <IngredientBuying
               ingredients={recipe.ingredients}
               isPremium={isPremium}
             />
 
+            {/* 9. COOKING SECTION */}
             <div>
               {isPremium ? (
                 <>
-                  {!cookingMode ? (
+                  {!cookingMode && (
                     <div className="space-y-2">
-                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                        Cook It
-                      </p>
-
+                      <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Cook It</p>
                       <div className="grid grid-cols-2 gap-3">
                         <button
                           onClick={() => setCookingMode("overview")}
-                          className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 transition-transform active:scale-95"
+                          className="rounded-2xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition-transform"
                         >
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-                            <ChefHat className="h-5 w-5 text-muted-foreground" />
+                          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+                            <ChefHat className="w-5 h-5 text-muted-foreground" />
                           </div>
-                          <span className="text-xs font-bold text-foreground">
-                            Full Recipe
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            All steps at once
-                          </span>
+                          <span className="text-xs font-bold text-foreground">Full Recipe</span>
+                          <span className="text-[10px] text-muted-foreground">All steps at once</span>
                         </button>
-
                         <button
-                          onClick={() => {
-                            setCookingMode("guided");
-                            Analytics.cookingModeStarted("guided");
-                          }}
-                          className="flex flex-col items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-4 transition-transform active:scale-95"
+                          onClick={() => setCookingMode("guided")}
+                          className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex flex-col items-center gap-2 active:scale-95 transition-transform"
                         >
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
-                            <ChefHat className="h-5 w-5 text-primary" />
+                          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                            <ChefHat className="w-5 h-5 text-primary" />
                           </div>
-                          <span className="text-xs font-bold text-primary">
-                            Guided Mode
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            Step by step
-                          </span>
+                          <span className="text-xs font-bold text-primary">Guided Mode</span>
+                          <span className="text-[10px] text-muted-foreground">Step by step</span>
                         </button>
                       </div>
                     </div>
-                  ) : (
+                  )}
+                  {cookingMode && (
                     <>
                       <button
                         onClick={() => setCookingMode(null)}
-                        className="mb-3 flex items-center gap-1 text-xs font-medium text-muted-foreground"
+                        className="text-xs text-muted-foreground font-medium flex items-center gap-1 mb-3"
                       >
-                        <ArrowLeft className="h-3 w-3" />
-                        Change cooking mode
+                        <ArrowLeft className="w-3 h-3" /> Change cooking mode
                       </button>
-
-                      <CookingSteps
-                        steps={recipe.steps}
-                        isGuidedMode={cookingMode === "guided"}
-                      />
+                      <CookingSteps steps={recipe.steps} isGuidedMode={cookingMode === "guided"} />
                     </>
                   )}
                 </>
@@ -682,34 +504,26 @@ export default function RecipeDetail() {
               )}
             </div>
           </>
-        ) : null}
+        )}
       </div>
 
-      {showShare && recipe ? (
-        <ShareCard
-          recipe={recipe}
-          menuItem={menuItem}
-          onClose={() => setShowShare(false)}
-        />
-      ) : null}
+      {/* Share modal */}
+      {showShare && (
+        <ShareCard recipe={recipe} menuItem={menuItem} onClose={() => setShowShare(false)} />
+      )}
 
-      {recipe && !cookingMode && isPremium ? (
-        <div
-          className="fixed left-1/2 z-40 w-full max-w-lg -translate-x-1/2 border-t border-border bg-background/95 px-5 pb-2 pt-2 backdrop-blur-xl"
-          style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
-        >
+      {/* Sticky Start Cooking CTA — positioned above bottom nav */}
+      {recipe && !cookingMode && isPremium && (
+        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-lg px-5 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-border z-40">
           <button
-            onClick={() => {
-              setCookingMode("guided");
-              Analytics.cookingModeStarted("guided");
-            }}
-            className="glow-red flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-white transition-transform active:scale-[0.98]"
+            onClick={() => setCookingMode("guided")}
+            className="w-full bg-primary text-white rounded-2xl h-14 font-bold text-sm flex items-center justify-center gap-2 glow-red active:scale-[0.98] transition-transform"
           >
-            <ChefHat className="h-5 w-5" />
+            <ChefHat className="w-5 h-5" />
             Start Cooking
           </button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

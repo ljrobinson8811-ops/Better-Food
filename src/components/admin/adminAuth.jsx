@@ -1,9 +1,11 @@
+// Super admin configuration — change this to update the admin email
 export const SUPER_ADMIN_EMAIL = "ljrobinson8811@gmail.com";
 
-export function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
-}
-
+/**
+ * Returns true if the given user object is the super admin.
+ * Works for both Google sign-in and email sign-in.
+ */
 export function isSuperAdmin(user) {
-  return normalizeEmail(user?.email) === normalizeEmail(SUPER_ADMIN_EMAIL);
+  if (!user?.email) return false;
+  return user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
 }

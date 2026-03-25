@@ -1,262 +1,175 @@
 import React from "react";
 import { motion } from "framer-motion";
-import {
-  Flame,
-  DollarSign,
-  Zap,
-  TrendingDown,
-  Award,
-} from "lucide-react";
+import { Flame, DollarSign, Zap, TrendingDown, Award, Droplets } from "lucide-react";
 
-function RingProgress({
-  value = 0,
-  max = 1,
-  strokeClassName = "text-primary",
-  size = 56,
-}) {
-  const progress = Math.min(1, Math.max(0, value / Math.max(max, 1)));
-  const radius = 20;
-  const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - progress);
+function RingProgress({ value, max, color, size = 56 }) {
+  const pct = Math.min(1, (value || 0) / (max || 1));
+  const r = 20;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - pct);
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 48 48"
-      className="rotate-[-90deg]"
-    >
+    <svg width={size} height={size} viewBox="0 0 48 48" className="rotate-[-90deg]">
+      <circle cx="24" cy="24" r={r} fill="none" stroke="currentColor" strokeWidth="4" className="text-border opacity-40" />
       <circle
-        cx="24"
-        cy="24"
-        r={radius}
+        cx="24" cy="24" r={r}
         fill="none"
-        strokeWidth="4"
-        className="text-border opacity-40"
-        stroke="currentColor"
-      />
-      <circle
-        cx="24"
-        cy="24"
-        r={radius}
-        fill="none"
+        stroke={color}
         strokeWidth="4"
         strokeLinecap="round"
-        className={strokeClassName}
-        stroke="currentColor"
-        strokeDasharray={circumference}
-        strokeDashoffset={dashOffset}
-        style={{ transition: "stroke-dashoffset 0.8s ease" }}
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        style={{ transition: "stroke-dashoffset 1s ease" }}
       />
     </svg>
   );
 }
 
-function StatWidget({
-  icon: Icon,
-  label,
-  value,
-  unit,
-  colorClass,
-  bubbleClass,
-  ringClass,
-  max,
-  delay = 0,
-}) {
+function StatWidget({ icon: IconComponent, label, value, unit, color, bgColor, max, delay = 0 }) {
+  const Icon = IconComponent;
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.94 }}
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay, duration: 0.3 }}
-      className="relative overflow-hidden rounded-2xl border border-border bg-card p-3"
+      transition={{ delay, duration: 0.4 }}
+      className="bg-card rounded-2xl border border-border p-3 flex flex-col gap-2 relative overflow-hidden"
     >
-      <div className={`absolute right-0 top-0 h-12 w-12 translate-x-4 -translate-y-4 rounded-full opacity-10 ${bubbleClass}`} />
-
+      <div className={`absolute top-0 right-0 w-12 h-12 rounded-full ${bgColor} opacity-10 -translate-y-4 translate-x-4`} />
       <div className="flex items-center justify-between">
-        <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${bubbleClass}/15`}>
-          <Icon className={`h-3.5 w-3.5 ${colorClass}`} />
+        <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${bgColor}/15`}>
+          <Icon className={`w-3.5 h-3.5 ${color}`} />
         </div>
-
-        <RingProgress
-          value={value}
-          max={max}
-          strokeClassName={ringClass}
-        />
+        <RingProgress value={value} max={max} color={color.replace("text-", "hsl(var(--")} />
       </div>
-
-      <div className="mt-2">
-        <p className="leading-none text-foreground">
-          <span className="text-xl font-black">
-            {typeof value === "number" ? value.toLocaleString() : value}
-          </span>
-          <span className="ml-1 text-xs font-semibold text-muted-foreground">
-            {unit}
-          </span>
+      <div>
+        <p className="text-xl font-black text-foreground leading-none">
+          {typeof value === "number" ? value.toLocaleString() : value}
+          <span className="text-xs font-semibold text-muted-foreground ml-1">{unit}</span>
         </p>
-        <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">
-          {label}
-        </p>
+        <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">{label}</p>
       </div>
     </motion.div>
   );
 }
 
-function StreakBadge({ weeks = 0 }) {
+function StreakBadge({ days }) {
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
+      initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.25 }}
-      className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-4 py-3"
+      transition={{ delay: 0.3 }}
+      className="flex items-center gap-3 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl px-4 py-3"
     >
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15">
-        <Award className="h-5 w-5 text-primary" />
+      <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+        <Award className="w-5 h-5 text-primary" />
       </div>
-
       <div className="flex-1">
         <p className="text-xs font-bold text-foreground">
-          {weeks > 0 ? `🔥 ${weeks}-Week Streak` : "Start your streak this week"}
+          {days > 0 ? `🔥 ${days}-Week Streak!` : "Start your streak this week!"}
         </p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">
-          {weeks > 0
-            ? "Keep choosing better food"
-            : "Make your first better meal"}
+        <p className="text-[10px] text-muted-foreground mt-0.5">
+          {days > 0 ? "Keep choosing better food" : "Make your first better meal"}
         </p>
       </div>
-
       <div className="text-right">
-        <p className="text-2xl font-black text-primary">{weeks}</p>
-        <p className="text-[9px] uppercase tracking-wider text-muted-foreground">
-          weeks
-        </p>
+        <p className="text-2xl font-black text-primary">{days}</p>
+        <p className="text-[9px] text-muted-foreground uppercase tracking-wider">weeks</p>
       </div>
     </motion.div>
   );
 }
 
-export default function FitnessDashboard({ stats = {} }) {
-  const caloriesAvoided = Number(stats.estimated_calories_avoided || 0);
-  const moneySaved = Number(stats.estimated_money_saved || 0);
-  const proteinGained = Math.round(caloriesAvoided * 0.03);
-  const sodiumReduced = Math.round(caloriesAvoided * 0.4);
-  const streakWeeks = Number(stats.cooking_streak || 0);
-
+export default function FitnessDashboard({ stats }) {
   const widgets = [
     {
       icon: Flame,
       label: "Calories Avoided",
-      value: caloriesAvoided,
+      value: stats?.estimated_calories_avoided || 0,
       unit: "kcal",
-      colorClass: "text-primary",
-      bubbleClass: "bg-red-500",
-      ringClass: "text-primary",
+      color: "text-chart-1",
+      bgColor: "bg-red-500",
       max: 2000,
     },
     {
       icon: Zap,
       label: "Protein Gained",
-      value: proteinGained,
+      value: Math.round((stats?.estimated_calories_avoided || 0) * 0.03),
       unit: "g",
-      colorClass: "text-chart-3",
-      bubbleClass: "bg-green-500",
-      ringClass: "text-chart-3",
+      color: "text-chart-3",
+      bgColor: "bg-green-500",
       max: 150,
     },
     {
       icon: DollarSign,
       label: "Money Saved",
-      value: Number(moneySaved.toFixed(0)),
+      value: stats?.estimated_money_saved || 0,
       unit: "$",
-      colorClass: "text-chart-4",
-      bubbleClass: "bg-yellow-500",
-      ringClass: "text-chart-4",
+      color: "text-chart-4",
+      bgColor: "bg-yellow-500",
       max: 100,
     },
     {
       icon: TrendingDown,
       label: "Sodium Reduced",
-      value: sodiumReduced,
+      value: Math.round((stats?.estimated_calories_avoided || 0) * 0.4),
       unit: "mg",
-      colorClass: "text-chart-2",
-      bubbleClass: "bg-blue-500",
-      ringClass: "text-chart-2",
+      color: "text-chart-2",
+      bgColor: "bg-blue-500",
       max: 3000,
     },
   ];
 
   return (
-    <div className="mt-6 px-5">
+    <div className="px-5 mt-6">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.12 }}
-        className="mb-3 flex items-center justify-between"
+        transition={{ delay: 0.15 }}
+        className="flex items-center justify-between mb-3"
       >
         <div>
           <h2 className="text-base font-black text-foreground">Your Impact</h2>
-          <p className="text-xs text-muted-foreground">
-            Lifetime Better Food stats
-          </p>
+          <p className="text-xs text-muted-foreground">Lifetime Better Food stats</p>
         </div>
-
-        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-          All Time
-        </span>
+        <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">All Time</span>
       </motion.div>
 
-      <StreakBadge weeks={streakWeeks} />
+      <StreakBadge days={stats?.cooking_streak || 0} />
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        {widgets.map((widget, index) => (
-          <StatWidget
-            key={widget.label}
-            {...widget}
-            delay={0.18 + index * 0.05}
-          />
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        {widgets.map((w, i) => (
+          <StatWidget key={w.label} {...w} delay={0.2 + i * 0.06} />
         ))}
       </div>
 
+      {/* Macro bar */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-        className="mt-3 rounded-2xl border border-border bg-card p-4"
+        transition={{ delay: 0.5 }}
+        className="mt-3 bg-card rounded-2xl border border-border p-4"
       >
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-xs font-bold text-foreground">
-            Better Macro Balance
-          </p>
-          <span className="text-[10px] text-muted-foreground">
-            vs fast food avg
-          </span>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-foreground">Better Macro Balance</p>
+          <span className="text-[10px] text-muted-foreground">vs fast food avg</span>
         </div>
-
         <div className="space-y-2.5">
           {[
-            { label: "Protein", pct: 72, barClass: "bg-chart-3", saved: "+24g avg" },
-            { label: "Calories", pct: 45, barClass: "bg-primary", saved: "-580 avg" },
-            { label: "Sodium", pct: 38, barClass: "bg-chart-2", saved: "-890mg avg" },
-          ].map((metric, index) => (
-            <div key={metric.label}>
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  {metric.label}
-                </span>
-                <span className="text-[11px] font-bold text-foreground">
-                  {metric.saved}
-                </span>
+            { label: "Protein", pct: 72, color: "bg-chart-3", saved: "+24g avg" },
+            { label: "Calories", pct: 45, color: "bg-chart-1", saved: "-580 avg" },
+            { label: "Sodium", pct: 38, color: "bg-chart-2", saved: "-890mg avg" },
+          ].map(m => (
+            <div key={m.label}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-medium text-muted-foreground">{m.label}</span>
+                <span className="text-[11px] font-bold text-foreground">{m.saved}</span>
               </div>
-
-              <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${metric.pct}%` }}
-                  transition={{
-                    delay: 0.5 + index * 0.08,
-                    duration: 0.7,
-                    ease: "easeOut",
-                  }}
-                  className={`h-full rounded-full ${metric.barClass}`}
+                  animate={{ width: `${m.pct}%` }}
+                  transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
+                  className={`h-full ${m.color} rounded-full`}
                 />
               </div>
             </div>

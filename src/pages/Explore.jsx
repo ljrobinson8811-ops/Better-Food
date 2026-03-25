@@ -1,38 +1,30 @@
-import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Flame, TrendingUp, Zap } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
+import { useQuery } from "@tanstack/react-query";
+import { Search, Plus, Flame, TrendingUp, Zap } from "lucide-react";
+import { Analytics } from "@/components/infra/analytics";
 import { Dedup } from "@/components/infra/deduplication";
 import { Validators } from "@/components/infra/validation";
-import { Analytics } from "@/components/infra/analytics";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 
-const FILTER_CATEGORIES = [
-  { label: "All", value: null, emoji: "" },
-  { label: "Burgers", value: "burgers", emoji: "🍔" },
-  { label: "Chicken", value: "chicken", emoji: "🍗" },
-  { label: "Mexican", value: "mexican", emoji: "🌮" },
-  { label: "Pizza", value: "pizza", emoji: "🍕" },
-  { label: "Asian", value: "asian", emoji: "🍜" },
-  { label: "Subs", value: "subs", emoji: "🥖" },
-  { label: "Coffee", value: "coffee", emoji: "☕" },
-];
-
-const CATEGORY_EMOJI = {
-  burgers: "🍔",
-  chicken: "🍗",
-  mexican: "🌮",
-  pizza: "🍕",
-  asian: "🍜",
-  subs: "🥖",
-  coffee: "☕",
-  other: "🍽️",
+const categoryEmoji = {
+  burgers: "🍔", chicken: "🍗", mexican: "🌮", pizza: "🍕",
+  asian: "🍜", subs: "🥖", coffee: "☕", other: "🍽️"
 };
+
+const FILTER_CATS = [
+  { label: "All",     emoji: "" },
+  { label: "Burgers", emoji: "🍔" },
+  { label: "Chicken", emoji: "🍗" },
+  { label: "Mexican", emoji: "🌮" },
+  { label: "Pizza",   emoji: "🍕" },
+  { label: "Asian",   emoji: "🍜" },
+  { label: "Subs",    emoji: "🥖" },
+  { label: "Coffee",  emoji: "☕" },
+];
+const filterMap = { "All": null, "Burgers": "burgers", "Chicken": "chicken", "Mexican": "mexican", "Pizza": "pizza", "Asian": "asian", "Subs": "subs", "Coffee": "coffee" };
 
 const STAT_BADGES = [
   { icon: Zap, label: "High Protein", color: "text-chart-3", bg: "bg-chart-3/10" },
@@ -40,56 +32,40 @@ const STAT_BADGES = [
   { icon: TrendingUp, label: "Trending", color: "text-chart-2", bg: "bg-chart-2/10" },
 ];
 
-function asArray(value) {
-  return Array.isArray(value) ? value : [];
-}
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 function RestaurantTile({ restaurant, index }) {
   const badge = STAT_BADGES[index % STAT_BADGES.length];
+  const initials = restaurant.name.split(/[\s']+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
+      initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.03 }}
+      transition={{ delay: index * 0.03, duration: 0.3 }}
     >
       <Link
         to={createPageUrl(`RestaurantDetail?id=${restaurant.id}`)}
-        className="block rounded-2xl border border-border bg-card p-3 transition-all hover:border-primary/25 active:scale-[0.98]"
+        className="block bg-card border border-border rounded-2xl p-3 active:scale-95 transition-all hover:border-primary/25 hover:shadow-md"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-secondary text-xl">
-            {restaurant.logo_url ? (
-              <img
-                src={restaurant.logo_url}
-                alt={restaurant.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span>{CATEGORY_EMOJI[restaurant.category] || "🍽️"}</span>
-            )}
+          <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center text-xl flex-shrink-0 border border-border overflow-hidden">
+            {restaurant.logo_url
+              ? <img src={restaurant.logo_url} alt={restaurant.name} className="w-full h-full object-cover" />
+              : <span>{categoryEmoji[restaurant.category] || "🍽️"}</span>
+            }
           </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-foreground">
-              {restaurant.name}
-            </p>
-
-            <div className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${badge.bg}`}>
-              <badge.icon className={`h-2.5 w-2.5 ${badge.color}`} />
-              <span className={`text-[9px] font-bold ${badge.color}`}>
-                {badge.label}
-              </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground truncate">{restaurant.name}</p>
+            <div className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full ${badge.bg}`}>
+              <badge.icon className={`w-2.5 h-2.5 ${badge.color}`} />
+              <span className={`text-[9px] font-bold ${badge.color}`}>{badge.label}</span>
             </div>
           </div>
-
           <div className="text-right">
-            <p className="text-[10px] capitalize text-muted-foreground">
-              {restaurant.category || "food"}
-            </p>
-            <p className="mt-0.5 text-[10px] font-bold text-chart-3">
-              View Better
-            </p>
+            <p className="text-[10px] text-muted-foreground capitalize">{restaurant.category || "food"}</p>
+            <p className="text-[10px] font-bold text-chart-3 mt-0.5">View Better</p>
           </div>
         </div>
       </Link>
@@ -98,220 +74,167 @@ function RestaurantTile({ restaurant, index }) {
 }
 
 export default function Explore() {
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newRestaurantName, setNewRestaurantName] = useState("");
+  const [newName, setNewName] = useState("");
   const [addError, setAddError] = useState("");
-  const [adding, setAdding] = useState(false);
 
-  const { data: restaurants = [], isLoading } = useQuery({
+  const { data: restaurants, isLoading, refetch } = useQuery({
     queryKey: ["restaurants"],
-    queryFn: async () => {
-      const result = await base44.entities.Restaurant.list("name", 200);
-      return asArray(result);
-    },
-    staleTime: 60 * 1000,
+    queryFn: () => base44.entities.Restaurant.list("name", 100),
     initialData: [],
   });
 
-  const activeFilterValue =
-    FILTER_CATEGORIES.find((item) => item.label === activeFilter)?.value ?? null;
+  useEffect(() => { setPage(1); }, [search, activeFilter]);
 
-  const filteredRestaurants = useMemo(() => {
-    return restaurants.filter((restaurant) => {
-      const matchesSearch =
-        !search.trim() ||
-        restaurant.name?.toLowerCase().includes(search.trim().toLowerCase());
+  const filtered = restaurants.filter(r => {
+    const matchSearch = !search.trim() || r.name.toLowerCase().includes(search.toLowerCase());
+    const matchCat = !filterMap[activeFilter] || r.category === filterMap[activeFilter];
+    return matchSearch && matchCat;
+  });
 
-      const matchesFilter =
-        !activeFilterValue || restaurant.category === activeFilterValue;
-
-      return matchesSearch && matchesFilter;
-    });
-  }, [restaurants, search, activeFilterValue]);
+  const noResults = (search.trim() || activeFilter !== "All") && filtered.length === 0;
+  const paginated = filtered.slice(0, page * PAGE_SIZE);
+  const hasMore   = paginated.length < filtered.length;
 
   const handleAddRestaurant = async () => {
     setAddError("");
-
-    const validationErrors = Validators.restaurantName(newRestaurantName);
-    if (validationErrors) {
-      setAddError(validationErrors[0]);
-      return;
-    }
-
-    setAdding(true);
-
-    try {
-      const exists = await Dedup.restaurantExists(newRestaurantName);
-      if (exists) {
-        setAddError("This restaurant already exists.");
-        return;
-      }
-
-      await base44.entities.Restaurant.create({
-        name: newRestaurantName.trim(),
-        category: "other",
-        is_official: false,
-      });
-
-      Analytics.restaurantSearched(newRestaurantName.trim());
-      setNewRestaurantName("");
-      setShowAddForm(false);
-      await queryClient.invalidateQueries({ queryKey: ["restaurants"] });
-    } catch (error) {
-      setAddError(error?.message || "Failed to add restaurant.");
-    } finally {
-      setAdding(false);
-    }
+    const validationErrors = Validators.restaurantName(newName);
+    if (validationErrors) { setAddError(validationErrors[0]); return; }
+    const exists = await Dedup.restaurantExists(newName);
+    if (exists) { setAddError("This restaurant already exists."); return; }
+    await base44.entities.Restaurant.create({ name: newName.trim(), is_official: false });
+    Analytics.restaurantSearched(newName.trim());
+    setNewName("");
+    setShowAddForm(false);
+    refetch();
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="rounded-b-3xl bg-foreground px-5 pb-6 pt-14">
-        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-background/40">
-          Explore
-        </p>
-        <h1 className="text-2xl font-black text-background">Find Fast Food</h1>
-        <p className="mt-1 text-sm text-background/60">
-          Discover better versions of your favorites
-        </p>
+      {/* Header */}
+      <div className="bg-foreground px-5 pt-14 pb-6 rounded-b-3xl">
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="text-background/40 text-xs font-bold uppercase tracking-widest mb-1">Explore</p>
+          <h1 className="text-2xl font-black text-background">Find Fast Food</h1>
+          <p className="text-background/60 text-sm mt-1">Discover better versions of your favorites</p>
+        </motion.div>
 
-        <div className="relative mt-4">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-background/35" />
+        {/* Search */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative mt-4"
+        >
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
           <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
             placeholder="Search restaurants..."
-            className="h-12 w-full rounded-2xl border border-background/20 bg-background/10 pl-11 pr-4 text-sm text-background placeholder:text-background/35 focus:border-primary/60 focus:bg-background/15 focus:outline-none"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full h-12 pl-11 pr-4 bg-background/10 border border-background/20 rounded-2xl text-sm text-background placeholder:text-foreground/30 focus:outline-none focus:border-primary/60 focus:bg-background/15"
           />
-        </div>
+        </motion.div>
       </div>
 
+      {/* Category Pills */}
       <div className="mt-4 px-5">
-        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-          {FILTER_CATEGORIES.map((category, index) => (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {FILTER_CATS.map((cat, i) => (
             <motion.button
-              key={category.label}
+              key={cat.label}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.12 + index * 0.03 }}
-              onClick={() => setActiveFilter(category.label)}
-              className={`flex-shrink-0 whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-bold transition-all ${
-                activeFilter === category.label
+              transition={{ delay: 0.15 + i * 0.03 }}
+              onClick={() => setActiveFilter(cat.label)}
+              className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+                activeFilter === cat.label
                   ? "bg-primary text-white shadow-md shadow-primary/20"
-                  : "bg-secondary text-muted-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
-              {category.emoji ? `${category.emoji} ` : ""}
-              {category.label}
+              {cat.emoji ? `${cat.emoji} ` : ""}{cat.label}
             </motion.button>
           ))}
         </div>
       </div>
 
-      <div className="mb-3 mt-5 flex items-center justify-between px-5">
+      {/* Section Label */}
+      <div className="px-5 mt-5 mb-3 flex items-center justify-between">
         <p className="text-base font-black text-foreground">
-          {filteredRestaurants.length}{" "}
-          {activeFilter === "All" ? "Restaurants" : activeFilter}
+          {filtered.length} {activeFilter === "All" ? "Restaurants" : activeFilter}
         </p>
-
         {!showAddForm && (
           <button
             onClick={() => setShowAddForm(true)}
             className="flex items-center gap-1.5 text-xs font-bold text-primary"
           >
-            <Plus className="h-3.5 w-3.5" />
-            Add
+            <Plus className="w-3.5 h-3.5" /> Add
           </button>
         )}
       </div>
 
-      <div className="space-y-2.5 px-5">
+      {/* Restaurant List */}
+      <div className="px-5 space-y-2.5">
         {isLoading ? (
-          Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="shimmer h-[68px] rounded-2xl" />
+          Array(8).fill(0).map((_, i) => (
+            <div key={i} className="h-[68px] rounded-2xl shimmer" />
           ))
-        ) : filteredRestaurants.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary text-3xl">
-              🔍
-            </div>
-            <p className="text-sm font-semibold text-foreground">
-              No restaurants found
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Try a different search or add it yourself
-            </p>
-
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4 text-3xl">🔍</div>
+            <p className="text-sm font-semibold text-foreground">No restaurants found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try a different search or filter</p>
             <Button
               className="mt-4 rounded-xl bg-primary"
               onClick={() => setShowAddForm(true)}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="w-4 h-4 mr-2" />
               Add this restaurant
             </Button>
           </div>
         ) : (
-          <AnimatePresence>
-            {filteredRestaurants.map((restaurant, index) => (
-              <RestaurantTile
-                key={restaurant.id}
-                restaurant={restaurant}
-                index={index}
-              />
-            ))}
-          </AnimatePresence>
+          <div className="space-y-2.5">
+            <AnimatePresence>
+              {paginated.map((r, i) => (
+                <RestaurantTile key={r.id} restaurant={r} index={i} />
+              ))}
+            </AnimatePresence>
+            {hasMore && (
+              <button
+                onClick={() => setPage(p => p + 1)}
+                className="w-full py-3 mt-2 rounded-2xl bg-secondary text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Load more ({filtered.length - paginated.length} remaining)
+              </button>
+            )}
+          </div>
         )}
 
+        {/* Add form */}
         <AnimatePresence>
           {showAddForm && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden rounded-2xl border border-border bg-card p-4"
+              className="bg-card border border-border rounded-2xl p-4 overflow-hidden"
             >
-              <p className="mb-3 text-sm font-bold text-foreground">
-                Add a Restaurant
-              </p>
-
+              <p className="text-sm font-bold mb-3">Add a Restaurant</p>
               <div className="flex gap-2">
                 <Input
-                  value={newRestaurantName}
-                  onChange={(event) => {
-                    setNewRestaurantName(event.target.value);
-                    setAddError("");
-                  }}
                   placeholder="Restaurant name..."
+                  value={newName}
+                  onChange={e => { setNewName(e.target.value); setAddError(""); }}
                   className="rounded-xl"
                 />
-
-                <Button
-                  onClick={handleAddRestaurant}
-                  className="flex-shrink-0 rounded-xl bg-primary"
-                  disabled={adding}
-                >
-                  {adding ? "..." : "Add"}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  className="flex-shrink-0 rounded-xl"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setAddError("");
-                    setNewRestaurantName("");
-                  }}
-                >
-                  ✕
-                </Button>
+                <Button onClick={handleAddRestaurant} className="rounded-xl bg-primary flex-shrink-0">Add</Button>
+                <Button variant="ghost" onClick={() => { setShowAddForm(false); setAddError(""); }} className="rounded-xl flex-shrink-0">✕</Button>
               </div>
-
-              {addError ? (
-                <p className="mt-2 text-xs font-medium text-primary">{addError}</p>
-              ) : null}
+              {addError && <p className="text-xs text-primary font-medium mt-1">{addError}</p>}
             </motion.div>
           )}
         </AnimatePresence>
