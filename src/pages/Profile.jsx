@@ -20,19 +20,19 @@ import {
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
-import { isSuperAdmin } from "@/components/admin/adminAuth";
-import ReferralSection from "@/components/growth/ReferralSection";
-import NotificationSettings from "@/components/settings/NotificationSettings";
-import { Button } from "@/components/ui/button";
+import { base44 } from "../api/base44Client.js";
+import { createPageUrl } from "../utils";
+import { isSuperAdmin } from "../components/admin/adminAuth.jsx";
+import ReferralSection from "../components/growth/ReferralSection.jsx";
+import NotificationSettings from "../components/settings/NotificationSettings.jsx";
+import { Button } from "../components/ui/button.jsx";
 import {
   BILLING_INTERVALS,
   createCheckoutSession,
   openCheckoutSession,
   syncPremiumFromBilling,
-} from "@/infra/billingService";
-import { clearPremiumCache } from "@/infra/premiumGate";
+} from "../lib/billingService.js";
+import { clearPremiumCache } from "../components/infra/premiumGate.jsx";
 
 const skillLabels = {
   1: "Beginner",

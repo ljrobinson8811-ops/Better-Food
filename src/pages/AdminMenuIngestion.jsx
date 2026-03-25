@@ -4,10 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-import AdminGuard from "@/components/admin/AdminGuard";
-import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
-import { discoverMenuForRestaurant } from "@/components/infra/menuWorker";
+import AdminGuard from "../components/admin/AdminGuard.jsx";
+import { base44 } from "../api/base44Client.js";
+import { createPageUrl } from "../utils";
+import { discoverMenuForRestaurant } from "../components/infra/menuWorker.jsx";
 
 const STATUS_COLOR = {
   success: "text-chart-3",
@@ -31,7 +31,7 @@ export default function AdminMenuIngestion() {
   const [running, setRunning] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: logs } = useQuery({
+  const { data: logs = [] } = useQuery({
     queryKey: ["menuLogs"],
     queryFn: async () => {
       try {
@@ -45,7 +45,7 @@ export default function AdminMenuIngestion() {
     initialData: [],
   });
 
-  const { data: restaurants } = useQuery({
+  const { data: restaurants = [] } = useQuery({
     queryKey: ["restaurants"],
     queryFn: async () => {
       try {
@@ -59,7 +59,7 @@ export default function AdminMenuIngestion() {
     initialData: [],
   });
 
-  const { data: queue } = useQuery({
+  const { data: queue = [] } = useQuery({
     queryKey: ["refreshQueue"],
     queryFn: async () => {
       try {
@@ -73,7 +73,7 @@ export default function AdminMenuIngestion() {
     initialData: [],
   });
 
-  const { data: menuItems } = useQuery({
+  const { data: menuItems = [] } = useQuery({
     queryKey: ["allMenuItems"],
     queryFn: async () => {
       try {

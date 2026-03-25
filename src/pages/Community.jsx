@@ -4,9 +4,9 @@ import { Heart, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
-import PullToRefresh from "@/components/shared/PullToRefresh";
+import { base44 } from "../api/base44Client.js";
+import { createPageUrl } from "../utils";
+import PullToRefresh from "../components/shared/PullToRefresh.jsx";
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];

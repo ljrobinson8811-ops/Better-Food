@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Heart, Utensils, Store, ArrowRight, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
+import { base44 } from "../api/base44Client.js";
+import { createPageUrl } from "../utils";
 
 function EmptyState({ isRecipe }) {
   return (

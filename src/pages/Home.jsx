@@ -1,14 +1,14 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { base44 } from "@/api/base44Client";
-import HeroSection from "@/components/home/HeroSection";
-import FitnessDashboard from "@/components/home/FitnessDashboard";
-import QuickActions from "@/components/home/QuickActions";
-import FeaturedCategories from "@/components/home/FeaturedCategories";
-import FeaturedRestaurants from "@/components/home/FeaturedRestaurants";
-import SocialProof from "@/components/home/SocialProof";
-import PullToRefresh from "@/components/shared/PullToRefresh";
+import { base44 } from "../api/base44Client.js";
+import HeroSection from "../components/home/HeroSection.jsx";
+import FitnessDashboard from "../components/home/FitnessDashboard.jsx";
+import QuickActions from "../components/home/QuickActions.jsx";
+import FeaturedCategories from "../components/home/FeaturedCategories.jsx";
+import FeaturedRestaurants from "../components/home/FeaturedRestaurants.jsx";
+import SocialProof from "../components/home/SocialProof.jsx";
+import PullToRefresh from "../components/shared/PullToRefresh.jsx";
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -17,7 +17,7 @@ function asArray(value) {
 export default function Home() {
   const queryClient = useQueryClient();
 
-  const { data: user } = useQuery({
+  const { data: user = null } = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
       try {
@@ -30,7 +30,7 @@ export default function Home() {
     initialData: null,
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats = {} } = useQuery({
     queryKey: ["userStats", user?.email || "anonymous"],
     enabled: Boolean(user?.email),
     queryFn: async () => {
@@ -45,7 +45,7 @@ export default function Home() {
     initialData: {},
   });
 
-  const { data: restaurants } = useQuery({
+  const { data: restaurants = [] } = useQuery({
     queryKey: ["topRestaurants"],
     queryFn: async () => {
       try {

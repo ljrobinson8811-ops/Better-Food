@@ -19,21 +19,21 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
-import { Analytics } from "@/components/infra/analytics";
-import { Quota } from "@/infra/quota";
-import { RateLimit } from "@/infra/rateLimit";
-import { generateAndStoreRecipe } from "@/infra/recipeWorker";
-import ShareCard from "@/components/shared/ShareCard";
-import NutritionComparison from "@/components/recipe/NutritionComparison";
-import IngredientTable from "@/components/recipe/IngredientTable";
-import IngredientBuying from "@/components/recipe/IngredientBuying";
-import PriceComparison from "@/components/recipe/PriceComparison";
-import CookingSteps from "@/components/recipe/CookingSteps";
-import DifficultyBadge from "@/components/shared/DifficultyBadge";
-import RecipeTimeBar from "@/components/recipe/RecipeTimeBar";
-import { Button } from "@/components/ui/button";
+import { createPageUrl } from "../utils";
+import { base44 } from "../api/base44Client.js";
+import { Analytics } from "../components/infra/analytics.jsx";
+import { Quota } from "../components/infra/quota.jsx";
+import { RateLimit } from "../components/infra/rateLimit.jsx";
+import { generateAndStoreRecipe } from "../components/infra/recipeWorker.jsx";
+import ShareCard from "../components/shared/ShareCard.jsx";
+import NutritionComparison from "../components/recipe/NutritionComparison.jsx";
+import IngredientTable from "../components/recipe/IngredientTable.jsx";
+import IngredientBuying from "../components/recipe/IngredientBuying.jsx";
+import PriceComparison from "../components/recipe/PriceComparison.jsx";
+import CookingSteps from "../components/recipe/CookingSteps.jsx";
+import DifficultyBadge from "../components/shared/DifficultyBadge.jsx";
+import RecipeTimeBar from "../components/recipe/RecipeTimeBar.jsx";
+import { Button } from "../components/ui/button.jsx";
 
 function AdvantageCard({ icon: Icon, title, value, sub, color, bgColor, delay = 0 }) {
   return (

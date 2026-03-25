@@ -1,21 +1,20 @@
 import React from "react";
-import AdminGuard from "@/components/admin/AdminGuard";
-import { base44 } from "@/api/base44Client";
+import AdminGuard from "../components/admin/AdminGuard.jsx";
+import { base44 } from "../api/base44Client.js";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "../utils";
 import { ArrowLeft } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { motion } from "framer-motion";
 
 export default function AdminAnalytics() {
-  const { data: events } = useQuery({
+  const { data: events = [] } = useQuery({
     queryKey: ["analyticsAll"],
     queryFn: () => base44.entities.UserAnalytics.list("-created_date", 500),
     initialData: [],
   });
 
-  const { data: premiumUsage } = useQuery({
+  const { data: premiumUsage = [] } = useQuery({
     queryKey: ["premiumUsage"],
     queryFn: () => base44.entities.PremiumFeatureUsage.list("-created_date", 200),
     initialData: [],
@@ -31,9 +30,9 @@ export default function AdminAnalytics() {
     .slice(0, 8)
     .map(([name, count]) => ({ name: name.replace(/_/g, " "), count }));
 
-  const attempted = premiumUsage.filter(p => p.action === "attempted").length;
-  const blocked = premiumUsage.filter(p => p.action === "blocked").length;
-  const converted = premiumUsage.filter(p => p.converted_to_premium).length;
+  const attempted = premiumUsage.filter((p) => p.action === "attempted").length;
+  const blocked = premiumUsage.filter((p) => p.action === "blocked").length;
+  const converted = premiumUsage.filter((p) => p.converted_to_premium).length;
 
   const featureCounts = premiumUsage.reduce((acc, e) => {
     if (e.action === "blocked") acc[e.feature_name] = (acc[e.feature_name] || 0) + 1;
@@ -79,7 +78,7 @@ export default function AdminAnalytics() {
                 { label: "Attempted", value: attempted, color: "text-chart-2" },
                 { label: "Blocked", value: blocked, color: "text-primary" },
                 { label: "Converted", value: converted, color: "text-chart-3" },
-              ].map(s => (
+              ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className={`text-xl font-black ${s.color}`}>{s.value}</p>
                   <p className="text-[10px] text-muted-foreground">{s.label}</p>
