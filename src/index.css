@@ -82,6 +82,12 @@
   }
 }
 
+/* Allow text selection for readable content */
+.selectable-text {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Premium scrollbar */
 ::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }

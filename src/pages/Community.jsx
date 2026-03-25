@@ -25,7 +25,7 @@ function PhotoCard({ photo, onLike, userEmail }) {
       </div>
       <div className="p-3">
         {photo.caption && (
-          <p className="text-xs font-medium text-foreground mb-2 line-clamp-2">{photo.caption}</p>
+          <p className="text-xs font-medium text-foreground mb-2 line-clamp-2 selectable-text">{photo.caption}</p>
         )}
         <div className="flex items-center justify-between">
           <p className="text-[10px] text-muted-foreground truncate max-w-[80px]">

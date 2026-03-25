@@ -512,9 +512,12 @@ export default function RecipeDetail() {
         <ShareCard recipe={recipe} menuItem={menuItem} onClose={() => setShowShare(false)} />
       )}
 
-      {/* Sticky Start Cooking CTA — positioned above bottom nav */}
+      {/* Sticky Start Cooking CTA — positioned above bottom nav + safe area */}
       {recipe && !cookingMode && isPremium && (
-        <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-lg px-5 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-border z-40">
+        <div
+          className="fixed left-1/2 -translate-x-1/2 w-full max-w-lg px-5 pb-2 pt-2 bg-background/95 backdrop-blur-xl border-t border-border z-40"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 4rem)" }}
+        >
           <button
             onClick={() => setCookingMode("guided")}
             className="w-full bg-primary text-white rounded-2xl h-14 font-bold text-sm flex items-center justify-center gap-2 glow-red active:scale-[0.98] transition-transform"

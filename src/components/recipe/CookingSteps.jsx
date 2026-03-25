@@ -78,7 +78,7 @@ export default function CookingSteps({ steps, isGuidedMode }) {
               <div className="w-12 h-12 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center text-xl font-black text-primary">
                 {step.step_number || currentStep + 1}
               </div>
-              <p className="text-base font-medium text-foreground leading-relaxed">{step.instruction}</p>
+              <p className="text-base font-medium text-foreground leading-relaxed selectable-text">{step.instruction}</p>
               {step.ingredient_note && (
                 <div className="bg-chart-2/8 border border-chart-2/15 rounded-xl px-3 py-2">
                   <p className="text-xs text-chart-2 font-medium">🧂 {step.ingredient_note}</p>
@@ -146,7 +146,7 @@ export default function CookingSteps({ steps, isGuidedMode }) {
               {step.step_number || i + 1}
             </div>
             <div className="flex-1">
-              <p className="text-sm text-foreground leading-relaxed">{step.instruction}</p>
+              <p className="text-sm text-foreground leading-relaxed selectable-text">{step.instruction}</p>
               {step.ingredient_note && (
                 <p className="text-xs text-muted-foreground mt-1">🧂 {step.ingredient_note}</p>
               )}

@@ -57,7 +57,11 @@ export default function Layout({ children, currentPageName }) {
   }, [location.pathname, location.search, activeTab]);
 
   const handleTabPress = (item) => {
-    if (item.page === activeTab) return; // already on this tab — no-op
+    if (item.page === activeTab) {
+      // Tapping the active tab navigates back to the root of that tab
+      navigate(createPageUrl(item.page));
+      return;
+    }
     const savedUrl = tabHistory.current[item.page];
     navigate(savedUrl ?? createPageUrl(item.page));
   };

@@ -27,7 +27,7 @@ export default function IngredientTable({ ingredients, onToggle, isPremium, view
             >
               <div className="w-2 h-2 rounded-full bg-muted-foreground/40 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{ing.original}</p>
+                <p className="text-sm font-medium text-foreground selectable-text">{ing.original}</p>
                 {ing.quantity && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">{ing.quantity}</p>
                 )}
@@ -67,7 +67,7 @@ export default function IngredientTable({ ingredients, onToggle, isPremium, view
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[11px] text-muted-foreground line-through">{ing.original}</span>
                 <ArrowRight className="w-3 h-3 text-chart-3 flex-shrink-0" />
-                <span className="text-[11px] font-bold text-foreground">{ing.better}</span>
+                <span className="text-[11px] font-bold text-foreground selectable-text">{ing.better}</span>
               </div>
               {ing.quantity && (
                 <p className="text-[10px] text-muted-foreground mt-1">{ing.quantity}</p>
