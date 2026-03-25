@@ -43,12 +43,13 @@ export default function RestaurantDetail() {
     enabled: !!restaurantId,
   });
 
-  const { data: menuItems, isLoading, refetch } = useQuery({
+  const { data: rawMenuItems, isLoading, refetch } = useQuery({
     queryKey: ["menuItems", restaurantId],
     queryFn: () => base44.entities.MenuItem.filter({ restaurant_id: restaurantId }),
     initialData: [],
     enabled: !!restaurantId,
   });
+  const menuItems = Array.isArray(rawMenuItems) ? rawMenuItems : [];
 
   const filteredItems = menuItems.filter(item => {
     const catVal = categoryMap[activeCategory];

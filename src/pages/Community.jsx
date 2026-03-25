@@ -55,11 +55,12 @@ export default function Community() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: photos, isLoading } = useQuery({
+  const { data: rawPhotos, isLoading } = useQuery({
     queryKey: ["communityPhotos"],
     queryFn: () => base44.entities.CommunityPhoto.filter({ status: "approved" }),
     initialData: [],
   });
+  const photos = Array.isArray(rawPhotos) ? rawPhotos : [];
 
   const sorted = tab === "trending"
     ? [...photos].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))

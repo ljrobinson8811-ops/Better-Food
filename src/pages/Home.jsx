@@ -26,11 +26,12 @@ export default function Home() {
     },
   });
 
-  const { data: restaurants } = useQuery({
+  const { data: rawRestaurants } = useQuery({
     queryKey: ["topRestaurants"],
     queryFn: () => base44.entities.Restaurant.list("name", 20),
     initialData: [],
   });
+  const restaurants = Array.isArray(rawRestaurants) ? rawRestaurants : [];
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries();

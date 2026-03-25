@@ -355,7 +355,7 @@ export default function Profile() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">Track what you already have at home</p>
-          {stats?.pantry_items?.length > 0 ? (
+          {Array.isArray(stats?.pantry_items) && stats.pantry_items.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-3">
               {stats.pantry_items.map((item, i) => (
                 <span key={i} className="bg-secondary border border-border text-xs px-2.5 py-1 rounded-lg text-foreground font-medium">

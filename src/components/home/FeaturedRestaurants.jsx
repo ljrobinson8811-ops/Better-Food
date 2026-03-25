@@ -15,7 +15,8 @@ const categoryLabel = {
 };
 
 export default function FeaturedRestaurants({ restaurants }) {
-  if (!restaurants || restaurants.length === 0) return null;
+  const safeRestaurants = Array.isArray(restaurants) ? restaurants : [];
+  if (safeRestaurants.length === 0) return null;
 
   return (
     <div className="mt-6">
@@ -29,8 +30,8 @@ export default function FeaturedRestaurants({ restaurants }) {
         </Link>
       </div>
       <div className="flex gap-3 px-5 overflow-x-auto no-scrollbar pb-2">
-        {restaurants.slice(0, 10).map((r, i) => {
-          const initials = r.name.split(/[\s']+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+        {safeRestaurants.slice(0, 10).map((r, i) => {
+          const initials = (r.name || "").split(/[\s']+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
           return (
             <motion.div
               key={r.id}

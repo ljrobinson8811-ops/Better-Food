@@ -82,11 +82,12 @@ export default function Explore() {
   const [newName, setNewName] = useState("");
   const [addError, setAddError] = useState("");
 
-  const { data: restaurants, isLoading, refetch } = useQuery({
+  const { data: rawRestaurants, isLoading, refetch } = useQuery({
     queryKey: ["restaurants"],
     queryFn: () => base44.entities.Restaurant.list("name", 100),
     initialData: [],
   });
+  const restaurants = Array.isArray(rawRestaurants) ? rawRestaurants : [];
 
   useEffect(() => { setPage(1); }, [search, activeFilter]);
 

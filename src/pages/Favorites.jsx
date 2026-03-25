@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Favorites() {
   const [tab, setTab] = useState("recipe");
 
-  const { data: favorites, isLoading } = useQuery({
+  const { data: rawFavorites, isLoading } = useQuery({
     queryKey: ["favorites"],
     queryFn: async () => {
       const me = await base44.auth.me();
@@ -17,6 +17,7 @@ export default function Favorites() {
     },
     initialData: [],
   });
+  const favorites = Array.isArray(rawFavorites) ? rawFavorites : [];
 
   const recipes = favorites.filter(f => f.item_type === "recipe");
   const restaurants = favorites.filter(f => f.item_type === "restaurant");
