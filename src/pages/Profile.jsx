@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { createCheckoutSession, openCheckoutSession, syncPremiumFromBilling, BILLING_INTERVALS } from "@/lib/billingService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   User, ChefHat, Crown, LogOut, Package, Flame, Zap,
@@ -90,7 +91,32 @@ export default function Profile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const trialCreatedRef = useRef(false);
+
+  // Sync subscription state when returning from Stripe checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      syncPremiumFromBilling().then(() => {
+        queryClient.invalidateQueries({ queryKey: ["userStats"] });
+        queryClient.invalidateQueries({ queryKey: ["accessLevel"] });
+        // Clean up URL
+        window.history.replaceState({}, "", window.location.pathname);
+      }).catch(() => {});
+    }
+  }, []);
+
+  const handleSubscribe = async (interval) => {
+    setCheckingOut(true);
+    try {
+      const session = await createCheckoutSession({ interval });
+      openCheckoutSession(session);
+    } catch (err) {
+      alert(err.message || "Could not start checkout. Please try again.");
+      setCheckingOut(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
@@ -388,10 +414,20 @@ export default function Profile() {
                   Same features · Choose your billing
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="bg-primary text-white rounded-xl py-3 text-sm font-black">
+                  <button
+                    onClick={() => handleSubscribe(BILLING_INTERVALS.MONTHLY)}
+                    disabled={checkingOut}
+                    className="bg-primary text-white rounded-xl py-3 text-sm font-black disabled:opacity-60 flex items-center justify-center gap-1"
+                  >
+                    {checkingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                     $4.99/mo
                   </button>
-                  <button className="bg-background/15 border border-background/25 text-background rounded-xl py-3 text-sm font-black relative">
+                  <button
+                    onClick={() => handleSubscribe(BILLING_INTERVALS.YEARLY)}
+                    disabled={checkingOut}
+                    className="bg-background/15 border border-background/25 text-background rounded-xl py-3 text-sm font-black relative disabled:opacity-60 flex items-center justify-center gap-1"
+                  >
+                    {checkingOut ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                     $29.99/yr
                     <span className="absolute -top-2 -right-1 text-[8px] font-black bg-chart-3 text-white px-1.5 py-0.5 rounded-full">
                       SAVE 50%
