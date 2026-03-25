@@ -187,7 +187,7 @@ export default function RecipeDetail() {
 
   const handleIngredientToggle = async (index) => {
     if (!recipe) return;
-    const newIngredients = [...recipe.ingredients];
+    const newIngredients = [...(Array.isArray(recipe.ingredients) ? recipe.ingredients : [])];
     newIngredients[index] = { ...newIngredients[index], accepted: !newIngredients[index].accepted };
     await base44.entities.Recipe.update(recipe.id, { ingredients: newIngredients });
     refetchRecipe();
